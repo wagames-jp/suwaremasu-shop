@@ -1,0 +1,417 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+.wrap { position: relative; width: 100%; max-width: 390px; margin: 0 auto; background: #111; border: 0.5px solid rgba(255,255,255,0.12); border-radius: 20px; overflow: hidden; min-height: 650px; display: flex; flex-direction: column; font-family: var(--font-sans); }
+.screen { display: none; flex-direction: column; flex: 1; }
+.screen.active { display: flex; }
+.app-header { padding: 16px 20px 12px; border-bottom: 0.5px solid rgba(255,255,255,0.15); display: flex; align-items: center; gap: 10px; background: #111; flex-shrink: 0; }
+.app-title { font-size: 20px; font-weight: 500; color: #fff; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.badge-success { background: #1a3a1a; color: #6dcc6d; }
+.badge-gray { background: #2a2a2a; color: rgba(255,255,255,0.5); }
+.status-bar { padding: 10px 20px; background: #1a1a1a; font-size: 12px; color: rgba(255,255,255,0.45); text-align: center; flex-shrink: 0; }
+.big-btn-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 20px 16px; background: #111; }
+.circle-outer { width: min(320px, calc(100vw - 60px)); height: min(320px, calc(100vw - 60px)); max-width: 320px; max-height: 320px; border-radius: 50%; background: white; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.circle-inner { width: calc(100% - 36px); height: calc(100% - 36px); border-radius: 50%; background: #cc2222; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; }
+.circle-inner:active { transform: scale(0.97); }
+.circle-inner.cooldown { background: #444; cursor: not-allowed; }
+.circle-inner span { font-size: clamp(58px, 18vw, 98px); font-weight: 500; color: white; line-height: 1.1; }
+.timer-bar { height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 8px 0; overflow: hidden; }
+.timer-fill { height: 100%; background: #cc2222; border-radius: 2px; transition: width 1s linear; }
+.bottom-nav { display: flex; border-top: 0.5px solid rgba(255,255,255,0.12); background: #111; flex-shrink: 0; }
+.nav-item { flex: 1; padding: 10px 6px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.4); cursor: pointer; transition: color 0.15s; }
+.nav-item.active { color: #fff; }
+.nav-icon { font-size: 18px; display: block; margin-bottom: 2px; }
+.modal-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; border-radius: 20px; }
+.modal { background: #1e1e1e; border-radius: 12px; border: 0.5px solid rgba(255,255,255,0.15); padding: 24px 20px; width: 280px; }
+.modal-title { font-size: 16px; font-weight: 500; text-align: center; margin-bottom: 8px; color: #fff; }
+.modal-sub { font-size: 13px; color: rgba(255,255,255,0.55); text-align: center; margin-bottom: 20px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-actions button { flex: 1; padding: 10px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: 0.5px solid rgba(255,255,255,0.25); background: #2a2a2a; color: #fff; }
+.modal-actions .btn-ok { background: #cc2222; border-color: #cc2222; color: white; }
+.content { flex: 1; overflow-y: auto; padding: 20px 16px; background: #111; }
+.section-label { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 500; letter-spacing: 0.08em; margin-bottom: 8px; margin-top: 20px; }
+.section-label:first-child { margin-top: 0; }
+.card-row { background: #1c1c1c; border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; margin-bottom: 4px; }
+.row-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; border-bottom: 0.5px solid rgba(255,255,255,0.07); cursor: pointer; }
+.row-item:last-child { border-bottom: none; }
+.row-item:active { background: rgba(255,255,255,0.05); }
+.row-label { font-size: 15px; color: #fff; }
+.row-value { font-size: 14px; color: rgba(255,255,255,0.4); display: flex; align-items: center; gap: 6px; }
+.row-arrow { color: rgba(255,255,255,0.25); font-size: 14px; }
+.history-item { background: #1c1c1c; border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; }
+.history-time { font-size: 13px; color: rgba(255,255,255,0.45); margin-bottom: 4px; }
+.history-main { display: flex; align-items: center; justify-content: space-between; }
+.history-label { font-size: 15px; font-weight: 500; color: #fff; }
+.history-detail { font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 6px; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+.stat-card { background: #1c1c1c; border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; }
+.stat-num { font-size: 26px; font-weight: 500; color: #fff; }
+.stat-label { font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.week-bar-wrap { background: #1c1c1c; border: 0.5px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px; margin-bottom: 8px; }
+.week-bars { display: flex; align-items: flex-end; gap: 6px; height: 60px; margin-top: 10px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.bar { width: 100%; background: #cc2222; border-radius: 3px 3px 0 0; opacity: 0.85; }
+.bar-day { font-size: 10px; color: rgba(255,255,255,0.35); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; }
+.toggle { width: 44px; height: 26px; background: #cc2222; border-radius: 13px; position: relative; cursor: pointer; border: none; transition: background 0.2s; flex-shrink: 0; }
+.toggle.off { background: #333; }
+.toggle-knob { width: 20px; height: 20px; background: #fff; border-radius: 50%; position: absolute; top: 3px; right: 3px; transition: right 0.2s; }
+.toggle.off .toggle-knob { right: auto; left: 3px; }
+.edit-input { width: 100%; background: #222; border: 0.5px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 14px; }
+.edit-input::placeholder { color: rgba(255,255,255,0.3); }
+.btn-save { width: 100%; padding: 13px; background: #cc2222; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 8px; }
+.btn-danger { width: 100%; padding: 13px; background: transparent; color: #cc4444; border: 0.5px solid #cc4444; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 8px; }
+.back-btn { font-size: 18px; color: rgba(255,255,255,0.6); cursor: pointer; padding: 2px 6px 2px 0; }
+.sub-header { font-size: 16px; font-weight: 500; color: #fff; }
+.cooldown-options { display: flex; gap: 8px; margin-top: 8px; }
+.cd-opt { flex: 1; padding: 10px 4px; background: #1c1c1c; border: 0.5px solid rgba(255,255,255,0.15); border-radius: 8px; color: rgba(255,255,255,0.5); font-size: 13px; text-align: center; cursor: pointer; }
+.cd-opt.selected { border-color: #cc2222; color: #fff; background: #2a1010; }
+</style>
+
+<div class="wrap" id="appWrap">
+
+  <div class="screen active" id="screen-send">
+    <div class="app-header">
+      <span class="app-title">二郎　神保町店</span>
+      <span id="storeBadge" class="badge badge-success" style="margin-left:auto;">送信済み</span>
+    </div>
+    <div class="status-bar" id="storeStatusBar">最終送信: 今日 14:23 ・ 30分後に自動リセット</div>
+    <div class="big-btn-wrap">
+      <div id="cooldownInfo" style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px;text-align:center;min-height:18px;"></div>
+      <div class="circle-outer">
+        <button class="circle-inner" id="bigBtn" onclick="pressMain()">
+          <span>座れ</span>
+          <span>ます</span>
+        </button>
+      </div>
+      <div style="width:260px;margin-top:24px;">
+        <div class="timer-bar"><div class="timer-fill" id="storeFill" style="width:70%;"></div></div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);text-align:center;margin-top:6px;" id="storeTimer">残り約18分で自動リセット</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="goTab('send',this)"><span class="nav-icon">📢</span>送信</div>
+      <div class="nav-item" onclick="goTab('history',this)"><span class="nav-icon">📊</span>履歴</div>
+      <div class="nav-item" onclick="goTab('settings',this)"><span class="nav-icon">⚙️</span>設定</div>
+    </div>
+    <div id="confirmModal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-title">送信しますか？</div>
+        <div class="modal-sub">「座れます」をお客さんに送信します。<br>お気に入り登録済みのお客さんにも通知が届きます。</div>
+        <div class="modal-actions">
+          <button onclick="cancelSend()">NO</button>
+          <button class="btn-ok" onclick="confirmSend()">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-history">
+    <div class="app-header">
+      <span class="app-title">送信履歴</span>
+    </div>
+    <div class="content">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num">12</div>
+          <div class="stat-label">今週の送信回数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">14:20</div>
+          <div class="stat-label">平均送信時刻</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">3</div>
+          <div class="stat-label">今日の送信回数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">30<span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);">分</span></div>
+          <div class="stat-label">平均空席継続時間</div>
+        </div>
+      </div>
+
+      <div class="week-bar-wrap">
+        <div style="font-size:13px;color:rgba(255,255,255,0.5);">今週の送信回数</div>
+        <div class="week-bars">
+          <div class="bar-col"><div class="bar" style="height:30px;"></div><span class="bar-day">月</span></div>
+          <div class="bar-col"><div class="bar" style="height:45px;"></div><span class="bar-day">火</span></div>
+          <div class="bar-col"><div class="bar" style="height:20px;"></div><span class="bar-day">水</span></div>
+          <div class="bar-col"><div class="bar" style="height:55px;"></div><span class="bar-day">木</span></div>
+          <div class="bar-col"><div class="bar" style="height:60px;"></div><span class="bar-day">金</span></div>
+          <div class="bar-col"><div class="bar" style="height:40px;"></div><span class="bar-day">土</span></div>
+          <div class="bar-col"><div class="bar" style="height:18px; opacity:0.4;"></div><span class="bar-day">日</span></div>
+        </div>
+      </div>
+
+      <div class="section-label">本日</div>
+      <div class="history-item">
+        <div class="history-time">今日 14:23</div>
+        <div class="history-main">
+          <span class="history-label">座れます 送信</span>
+          <span class="badge badge-success">有効</span>
+        </div>
+        <div class="history-detail">自動リセット予定: 14:53 ・ お気に入り登録 8名に通知</div>
+      </div>
+      <div class="history-item">
+        <div class="history-time">今日 12:05</div>
+        <div class="history-main">
+          <span class="history-label">座れます 送信</span>
+          <span class="badge badge-gray">リセット済み</span>
+        </div>
+        <div class="history-detail">自動リセット: 12:35 ・ お気に入り登録 8名に通知</div>
+      </div>
+      <div class="history-item">
+        <div class="history-time">今日 11:10</div>
+        <div class="history-main">
+          <span class="history-label">座れます 送信</span>
+          <span class="badge badge-gray">リセット済み</span>
+        </div>
+        <div class="history-detail">自動リセット: 11:40 ・ お気に入り登録 8名に通知</div>
+      </div>
+
+      <div class="section-label">昨日</div>
+      <div class="history-item">
+        <div class="history-time">昨日 15:50</div>
+        <div class="history-main">
+          <span class="history-label">座れます 送信</span>
+          <span class="badge badge-gray">リセット済み</span>
+        </div>
+        <div class="history-detail">自動リセット: 16:20 ・ お気に入り登録 8名に通知</div>
+      </div>
+      <div class="history-item">
+        <div class="history-time">昨日 13:30</div>
+        <div class="history-main">
+          <span class="history-label">座れます 送信</span>
+          <span class="badge badge-gray">リセット済み</span>
+        </div>
+        <div class="history-detail">自動リセット: 14:00 ・ お気に入り登録 8名に通知</div>
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goTab('send',this)"><span class="nav-icon">📢</span>送信</div>
+      <div class="nav-item active" onclick="goTab('history',this)"><span class="nav-icon">📊</span>履歴</div>
+      <div class="nav-item" onclick="goTab('settings',this)"><span class="nav-icon">⚙️</span>設定</div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-settings">
+    <div class="app-header">
+      <span class="app-title">設定</span>
+    </div>
+    <div class="content">
+
+      <div class="section-label">店舗情報</div>
+      <div class="card-row">
+        <div class="row-item" onclick="showSub('screen-edit-store')">
+          <span class="row-label">店舗情報を編集</span>
+          <span class="row-value">二郎 神保町店 <span class="row-arrow">›</span></span>
+        </div>
+      </div>
+
+      <div class="section-label">送信設定</div>
+      <div class="card-row">
+        <div class="row-item" onclick="showSub('screen-cooldown')">
+          <span class="row-label">クールダウン時間</span>
+          <span class="row-value">30分 <span class="row-arrow">›</span></span>
+        </div>
+      </div>
+
+      <div class="section-label">通知設定</div>
+      <div class="card-row">
+        <div class="toggle-row">
+          <span class="row-label">送信完了通知</span>
+          <button class="toggle" id="tog1" onclick="toggleBtn(this)"><div class="toggle-knob"></div></button>
+        </div>
+        <div class="toggle-row" style="border-top:0.5px solid rgba(255,255,255,0.07);">
+          <span class="row-label">自動リセット通知</span>
+          <button class="toggle" id="tog2" onclick="toggleBtn(this)"><div class="toggle-knob"></div></button>
+        </div>
+        <div class="toggle-row" style="border-top:0.5px solid rgba(255,255,255,0.07);">
+          <span class="row-label">お気に入り登録数通知</span>
+          <button class="toggle off" id="tog3" onclick="toggleBtn(this)"><div class="toggle-knob"></div></button>
+        </div>
+      </div>
+
+      <div class="section-label">アカウント</div>
+      <div class="card-row">
+        <div class="row-item" onclick="showSub('screen-change-pass')">
+          <span class="row-label">パスワード変更</span>
+          <span class="row-value"><span class="row-arrow">›</span></span>
+        </div>
+        <div class="row-item" style="border-top:0.5px solid rgba(255,255,255,0.07);">
+          <span class="row-label" style="color:#cc4444;">ログアウト</span>
+        </div>
+      </div>
+
+      <div class="section-label">アプリについて</div>
+      <div class="card-row">
+        <div class="row-item">
+          <span class="row-label">バージョン</span>
+          <span class="row-value">1.0.0</span>
+        </div>
+        <div class="row-item" style="border-top:0.5px solid rgba(255,255,255,0.07);">
+          <span class="row-label">利用規約</span>
+          <span class="row-value"><span class="row-arrow">›</span></span>
+        </div>
+        <div class="row-item" style="border-top:0.5px solid rgba(255,255,255,0.07);">
+          <span class="row-label">プライバシーポリシー</span>
+          <span class="row-value"><span class="row-arrow">›</span></span>
+        </div>
+      </div>
+
+    </div>
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="goTab('send',this)"><span class="nav-icon">📢</span>送信</div>
+      <div class="nav-item" onclick="goTab('history',this)"><span class="nav-icon">📊</span>履歴</div>
+      <div class="nav-item active" onclick="goTab('settings',this)"><span class="nav-icon">⚙️</span>設定</div>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-edit-store">
+    <div class="app-header">
+      <span class="back-btn" onclick="hideSub('screen-settings')">←</span>
+      <span class="sub-header">店舗情報を編集</span>
+    </div>
+    <div class="content">
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">店名</div>
+        <input class="edit-input" type="text" value="二郎" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">支店名</div>
+        <input class="edit-input" type="text" value="神保町店" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">地域</div>
+        <input class="edit-input" type="text" value="東京都千代田区" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">最寄り駅</div>
+        <input class="edit-input" type="text" value="神保町駅" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">住所</div>
+        <input class="edit-input" type="text" value="千代田区神田神保町2-5-3" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">電話番号（任意）</div>
+        <input class="edit-input" type="tel" value="03-xxxx-xxxx" />
+      </div>
+      <button class="btn-save" onclick="hideSub('screen-settings')">保存する</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-cooldown">
+    <div class="app-header">
+      <span class="back-btn" onclick="hideSub('screen-settings')">←</span>
+      <span class="sub-header">クールダウン時間</span>
+    </div>
+    <div class="content">
+      <p style="font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:20px;">「座れます」送信後、次の送信が可能になるまでの待機時間です。自動リセットのタイミングも同じ時間が適用されます。</p>
+      <div class="section-label">時間を選ぶ</div>
+      <div class="cooldown-options" id="cdOpts">
+        <div class="cd-opt" onclick="selectCd(this)">15分</div>
+        <div class="cd-opt selected" onclick="selectCd(this)">30分</div>
+        <div class="cd-opt" onclick="selectCd(this)">45分</div>
+        <div class="cd-opt" onclick="selectCd(this)">60分</div>
+      </div>
+      <p style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:12px;">※ 混雑状況に合わせて調整してください</p>
+      <button class="btn-save" style="margin-top:24px;" onclick="hideSub('screen-settings')">保存する</button>
+    </div>
+  </div>
+
+  <div class="screen" id="screen-change-pass">
+    <div class="app-header">
+      <span class="back-btn" onclick="hideSub('screen-settings')">←</span>
+      <span class="sub-header">パスワード変更</span>
+    </div>
+    <div class="content">
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">現在のパスワード</div>
+        <input class="edit-input" type="password" placeholder="••••••••" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">新しいパスワード</div>
+        <input class="edit-input" type="password" placeholder="8文字以上" />
+      </div>
+      <div class="input-group" style="margin-bottom:14px;">
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:5px;">新しいパスワード（確認）</div>
+        <input class="edit-input" type="password" placeholder="もう一度入力" />
+      </div>
+      <button class="btn-save" onclick="hideSub('screen-settings')">変更する</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let cooldownActive = false;
+let cooldownTimer = null;
+
+function goTab(tab, el) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + tab).classList.add('active');
+}
+
+function showSub(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function hideSub(returnTo) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(returnTo).classList.add('active');
+}
+
+function pressMain() {
+  if (cooldownActive) return;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+function cancelSend() {
+  document.getElementById('confirmModal').style.display = 'none';
+}
+function confirmSend() {
+  document.getElementById('confirmModal').style.display = 'none';
+  const badge = document.getElementById('storeBadge');
+  const statusBar = document.getElementById('storeStatusBar');
+  const now = new Date();
+  statusBar.textContent = `最終送信: ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ・ 30分後に自動リセット`;
+  badge.textContent = '送信済み';
+  badge.className = 'badge badge-success';
+  let secs = 1800;
+  const fill = document.getElementById('storeFill');
+  const timerEl = document.getElementById('storeTimer');
+  const coolInfo = document.getElementById('cooldownInfo');
+  cooldownActive = true;
+  coolInfo.textContent = 'クールダウン中：あと30分後に再送信可能';
+  if (cooldownTimer) clearInterval(cooldownTimer);
+  cooldownTimer = setInterval(() => {
+    secs--;
+    fill.style.width = Math.round((secs / 1800) * 100) + '%';
+    const mins = Math.floor(secs / 60);
+    timerEl.textContent = `残り約${mins}分で自動リセット`;
+    coolInfo.textContent = `クールダウン中：あと${mins}分後に再送信可能`;
+    if (secs <= 0) {
+      clearInterval(cooldownTimer);
+      cooldownActive = false;
+      document.getElementById('bigBtn').className = 'circle-inner';
+      badge.textContent = '待機中';
+      badge.className = 'badge badge-gray';
+      fill.style.width = '0%';
+      timerEl.textContent = '';
+      coolInfo.textContent = '';
+      statusBar.textContent = '待機中 ・ ボタンを押してお客さんに知らせましょう';
+    }
+  }, 1000);
+}
+
+function toggleBtn(el) {
+  el.classList.toggle('off');
+}
+
+function selectCd(el) {
+  document.querySelectorAll('.cd-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+</script>
